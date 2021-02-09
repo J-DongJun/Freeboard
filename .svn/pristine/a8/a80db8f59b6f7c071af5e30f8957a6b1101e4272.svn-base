@@ -1,0 +1,283 @@
+package ino.web.freeBoard.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import ino.web.freeBoard.dto.FreeBoardDto;
+import ino.web.freeBoard.dto.Pagination;
+import ino.web.freeBoard.dto.RefBoardDto;
+import ino.web.freeBoard.dto.RefFileDto;
+import ino.web.freeBoard.service.FreeBoardService;
+
+// https://dh2y.iptime.org:10443/svn/JDJ
+@Controller
+public class FreeBoardController {
+	
+	@Autowired
+	private FreeBoardService freeBoardService;
+	
+	// 메인게시글 리스트
+	@RequestMapping(value="/main.ino", method = RequestMethod.GET)
+	public ModelAndView main(HttpServletRequest request
+							, @RequestParam(defaultValue="1") int curPage
+							, @RequestParam(defaultValue="name") String search_option
+							, @RequestParam(defaultValue="") String keyword){
+		
+		ModelAndView mav = new ModelAndView();
+		FreeBoardDto boardDto = new FreeBoardDto();
+		
+		int listCnt = freeBoardService.selectBoardListCnt(boardDto); //총게시글수
+		
+		
+		Pagination pagination = new Pagination(listCnt, curPage);
+		
+		
+		boardDto.setStartIndex(pagination.getStartIndex());
+		boardDto.setCntPerPage(pagination.getPageSize());
+		boardDto.setSearch_option(search_option);
+		boardDto.setKeyword(keyword);
+		
+		List list = freeBoardService.freeBoardList(boardDto);
+		
+		
+		mav.setViewName("boardMain");
+		mav.addObject("freeBoardList",list);
+		mav.addObject("pagination", pagination);
+		mav.addObject("listCnt", listCnt);
+		mav.addObject("search_option", search_option);
+		mav.addObject("keyword", keyword);
+	return mav;
+	}
+	
+	
+	@RequestMapping(value="/freeBoardInsert.ino", method = RequestMethod.GET)
+	public String freeBoardInsert(HttpServletRequest request){
+		return "freeBoardInsert";
+	}
+	
+	// 메인 게시글 글쓰기
+	@RequestMapping(value="/freeBoardInsertPro.ino", method = RequestMethod.POST)
+	public String freeBoardInsertPro(FreeBoardDto dto, HttpServletRequest request){
+		dto.setName(request.getParameter("name"));
+		dto.setTitle(request.getParameter("title"));
+		dto.setContent(request.getParameter("content"));
+		freeBoardService.freeBoardInsertPro(dto);
+		int num = dto.getNum();
+		System.out.println("insert num >>>>>>" + num);
+		return "redirect:freeBoardDetail.ino?num=" + num;
+	}
+	
+	// 메인 게시글 상세페이지
+	@RequestMapping(value="/freeBoardDetail.ino", method = RequestMethod.GET)
+	public ModelAndView freeBoardDetail(HttpServletRequest request, FreeBoardDto dto){
+		int num = Integer.parseInt(request.getParameter("num"));
+		dto = freeBoardService.getDetailByNum(num);
+		return new ModelAndView("freeBoardDetail", "freeBoardDto", dto);
+	}
+	
+	// 메인 게시글 수정 페이지처리
+	@RequestMapping(value="/freeBoardUpdate.ino", method = RequestMethod.POST)
+	public ModelAndView freeBoardUpdate(HttpServletRequest request,FreeBoardDto dto){
+		int num = Integer.parseInt(request.getParameter("num"));
+		dto = freeBoardService.getDetailByNum(num);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("freeBoardUpdate");
+		mav.addObject("freeBoardDto", dto);
+		System.out.println("수정전 "+dto.toString());
+		return mav;
+	}
+	
+	// 메인 게시글 수정 기능
+	@RequestMapping(value="/freeBoardUpdatePro.ino", method = RequestMethod.POST)
+	public String freeBoardUpdatePro(HttpServletRequest request,FreeBoardDto dto){
+		dto.setName(request.getParameter("name"));
+		dto.setTitle(request.getParameter("title"));
+		dto.setContent(request.getParameter("content"));
+		dto.setNum(Integer.parseInt(request.getParameter("num")));
+		freeBoardService.freeBoardUpdatePro(dto);
+		System.out.println("수정 후"+dto.toString());
+		return "redirect:main.ino";
+	}
+	
+	// 메인 게시글 삭제 기능
+	@RequestMapping(value="/freeBoardDelete.ino", method = RequestMethod.GET)
+	public String freeBoardDelete(@RequestParam("num") int num){
+		freeBoardService.freeBoardDelete(num);
+		return "redirect:main.ino";
+	}
+	
+	// ====================================================
+	
+	// 자료실 리스트
+	@RequestMapping(value="/ref.ino", method = RequestMethod.GET)
+	public ModelAndView ref(HttpServletRequest request
+										,@RequestParam(defaultValue="1") int curPage){
+		ModelAndView mav = new ModelAndView();
+		RefBoardDto dto = new RefBoardDto();
+		
+		int listCnt = freeBoardService.selectRefBoardListCnt(dto);// 총게시글수
+		
+		Pagination pagination = new Pagination(listCnt, curPage);
+		
+		dto.setRefStartIndex(pagination.getStartIndex());
+		dto.setRefCntPerPage(pagination.getPageSize());
+		
+		List list = freeBoardService.refBoardList(dto);
+		
+		
+		mav.setViewName("refBoardMain");
+		mav.addObject("RefBoardList",list);
+		mav.addObject("pagination", pagination);
+		mav.addObject("listCnt", listCnt);
+		return mav;
+	}
+	
+	// 자료실 글쓰기 화면
+	@RequestMapping(value="/refBoardInsert.ino", method = RequestMethod.GET)
+	public String refBoardInsert(HttpServletRequest request){
+		return "refBoardInsert";
+	}
+
+	// 자료실 글쓰기 구현
+		@RequestMapping(value="/refBoardInsertPro.ino", method = RequestMethod.POST)
+		public String refBoardInsertPro(RefBoardDto dto
+									, HttpServletRequest request
+									, @RequestParam(value="file1", required = false) MultipartFile mf
+									//view 에서 받아온 파일을 mf변수에 저장 
+				){
+			//파일이 저장되는경로
+			String SAVE_PATH = "C:\\fileUpLoad\\";
+			//받아온 변수 mf의 오리지널 네임 추출해서 originalFileName 변수에 담아줌
+			String originalFileName = mf.getOriginalFilename();
+			//받아온 변수 mf의 파일 사이즈 추출
+			long fileSize = mf.getSize();
+			//저장경로 + 현재시간 + 오리지널 파일이름 융합! 엑조디아
+			String safeFile = SAVE_PATH + System.currentTimeMillis() + originalFileName;
+			try {
+				//업로드한 파일의 데이터를 저장합니다.
+				mf.transferTo(new File(safeFile));
+			}
+			catch (IllegalStateException e) {
+				e.printStackTrace();
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
+			//게시글 
+			dto.setRefname(request.getParameter("refname"));
+			dto.setReftitle(request.getParameter("reftitle"));
+			dto.setRefcontent(request.getParameter("refcontent"));
+			
+			freeBoardService.refBoardInsertPro(dto);
+			int refnum = dto.getRefnum();
+			
+			//파일 DB
+			RefFileDto refFileDto = new RefFileDto();
+			//게시글 번호를 파일 테이블 안의 해당게시글 번호 셋팅
+			refFileDto.setBoard_no(refnum);
+			refFileDto.setOrg_file_name(originalFileName);
+			refFileDto.setChange_file_name(safeFile);
+			refFileDto.setFile_size((int) fileSize);
+			
+			freeBoardService.refBoardFileInsertPro(refFileDto);
+			
+			System.out.println("insert refnum >>>>>>" + refnum);
+			return "redirect:refBoardDetail.ino?refnum=" + refnum;
+		}
+		
+	// 자료실 상세페이지
+		@RequestMapping(value="/refBoardDetail.ino", method = RequestMethod.GET)
+		public ModelAndView refBoardDetail(HttpServletRequest request, RefBoardDto dto, RefFileDto filedto){
+			int refnum = Integer.parseInt(request.getParameter("refnum"));
+			System.out.println("detail refnum >>>>>>" + refnum);
+			dto = freeBoardService.getDetailRefNum(refnum);
+			//게시글번호로 파일들 조회해옴
+			filedto = freeBoardService.getDetailRefFileNum(refnum);
+			
+			ModelAndView mav = new ModelAndView();
+			mav.setViewName("refBoardDetail");
+			mav.addObject("refBoardDto", dto);
+			mav.addObject("fileDto", filedto);
+			return mav;
+		}
+		
+		// 자료실 수정 페이지처리
+		@RequestMapping(value="/refBoardUpdate.ino", method = RequestMethod.GET)
+		public ModelAndView refBoardUpdate(HttpServletRequest request,RefBoardDto dto, RefFileDto filedto){
+			int refnum = Integer.parseInt(request.getParameter("refnum"));
+			dto = freeBoardService.getDetailRefNum(refnum);
+			//게시글번호로 파일들 조회해옴
+			filedto = freeBoardService.getDetailRefFileNum(refnum);
+			
+			ModelAndView mav = new ModelAndView();
+			mav.setViewName("refBoardUpdate");
+			mav.addObject("refBoardDto", dto);
+			mav.addObject("fileDto", filedto);
+			System.out.println("자료실수정전 "+dto.toString());
+			System.out.println("자료실수정전 "+filedto.toString());
+			return mav;
+		}
+		
+		// 자료실 수정 기능
+		@RequestMapping(value="/refBoardUpdatePro.ino", method = RequestMethod.GET)
+		public String refBoardUpdatePro(HttpServletRequest request,RefBoardDto dto){
+			dto.setRefname(request.getParameter("refname"));
+			dto.setReftitle(request.getParameter("reftitle"));
+			dto.setRefcontent(request.getParameter("refcontent"));
+			dto.setRefnum(Integer.parseInt(request.getParameter("refnum")));
+			freeBoardService.refBoardUpdatePro(dto);
+			System.out.println("자료실 수정 후"+dto.toString());
+			return "redirect:ref.ino";
+		}
+		
+		// 자료실 삭제 기능
+		@RequestMapping(value="/refBoardDelete.ino", method = RequestMethod.GET)
+		public String refBoardDelete(@RequestParam("refnum") int refnum){
+			freeBoardService.refBoardDelete(refnum);
+			freeBoardService.refBoardFileDelete(refnum);
+			
+			return "redirect:ref.ino";
+		}
+		
+		// 파일 삭제 기능 N에서Y변경
+		@RequestMapping(value="/fileDelete.ino", method = RequestMethod.GET)
+		public String fileDelete(@RequestParam("fileNum") int fileNum
+								, @RequestParam("refnum") int refnum){
+			int flag = freeBoardService.fileUpdateDelete(fileNum); //이거 파일 N -> Y변경임
+			System.out.println("fileNum >>>>>> " + fileNum);
+			//업데이트 성공값은 1
+			return "redirect:refBoardUpdate.ino?flag=" + flag + "&refnum=" +refnum;
+		}
+		
+	/*
+	 * String getName();
+	 * - 파라미터의 이름을 반환해줍니다.
+	 * 
+	 * String getOriginalFilename();
+	 * - 업로드할 파일의 실제이름을 반환합니다.
+	 * 
+	 * long getSize();
+	 * - 업로드할 파일의 크기를 반환합니다.
+	 * 
+	 * boolean isEmpty()
+	 * - 업로드한 파일의 존재여부를 반환합니다.
+	 * 
+	 * byte[] getBytes()
+	 * - 업로드한 파일의 실제 데이터를 구합니다.
+	 * 
+	 * void transferTo(File dest)
+	 * - 업로드한 파일의 데이터를 저장합니다.
+	 */
+		
+}

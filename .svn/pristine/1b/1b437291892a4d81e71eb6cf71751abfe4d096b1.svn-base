@@ -1,0 +1,14 @@
+package ino.web.freeBoard.dao;
+
+import org.apache.ibatis.session.SqlSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+@Repository("freeboardDAO")
+public class FreeBoardDao {
+	
+	@Autowired
+	private SqlSession sqlSession;
+	
+	
+}

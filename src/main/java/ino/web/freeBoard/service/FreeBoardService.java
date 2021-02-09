@@ -1,0 +1,110 @@
+package ino.web.freeBoard.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import ino.web.freeBoard.dto.FreeBoardDto;
+import ino.web.freeBoard.dto.Pagination;
+import ino.web.freeBoard.dto.RefBoardDto;
+import ino.web.freeBoard.dto.RefFileDto;
+import ino.web.freeBoard.mapper.FreeBoardMapper;
+
+@Service
+public class FreeBoardService {
+
+	@Autowired
+	private SqlSessionTemplate sqlSessionTemplate;
+	
+	public List freeBoardList(FreeBoardDto boardDto){
+		return sqlSessionTemplate.selectList("freeBoardGetList", boardDto);
+	}
+	
+	// 자유게시판 총게시글 수 구할때 
+		public int selectBoardListCnt(FreeBoardDto freeBoardDto){
+			return sqlSessionTemplate.selectOne("freeBoardGetListCnt", freeBoardDto);
+		}
+	
+	public List freeBoardList2(){
+		return sqlSessionTemplate.selectList("freeBoardGetList2");
+	}
+	
+	// 개시판 글쓰기 추가 기능
+	public int freeBoardInsertPro(FreeBoardDto dto){
+		return sqlSessionTemplate.insert("freeBoardInsertPro", dto);
+	}
+	
+	public FreeBoardDto getDetailByNum(int num){
+		return sqlSessionTemplate.selectOne("freeBoardDetailByNum", num);
+	}
+	
+	// 게시판 수정
+	public void freeBoardUpdatePro(FreeBoardDto dto){
+		sqlSessionTemplate.update("freeBoardUpdatePro", dto);
+	}
+	
+	// 게시판 삭제
+	public void freeBoardDelete(int num){
+		sqlSessionTemplate.delete("freeBoardDelete", num);
+	}
+	
+	// ==============================================
+	
+	// 자료실 리스트
+	public List refBoardList(RefBoardDto dto){
+		return sqlSessionTemplate.selectList("refBoardGetList", dto);
+	}
+	
+	public List refBoardList2(){
+		return sqlSessionTemplate.selectList("refBoardGetList2");
+	}
+	
+	// 자료실 총게시글 수 구할때 
+		public int selectRefBoardListCnt(RefBoardDto dto) {
+			return sqlSessionTemplate.selectOne("refBoardGetListCnt", dto);
+			}
+	
+	// 자료실 글추가 기능
+	public int refBoardInsertPro(RefBoardDto dto){
+		return sqlSessionTemplate.insert("refBoardInsertPro", dto);
+	}
+	
+	public RefBoardDto getDetailRefNum(int refnum){
+		return sqlSessionTemplate.selectOne("refBoardDetailByNum", refnum);
+	}
+	// 파일 조회 
+	public RefFileDto getDetailRefFileNum(int refnum){
+		return sqlSessionTemplate.selectOne("refBoardDetailFileByNum", refnum);
+	}
+	
+	// 자료실 수정
+		public void refBoardUpdatePro(RefBoardDto dto){
+			sqlSessionTemplate.update("refBoardUpdatePro", dto);
+		}
+		
+	// 자료실 삭제
+	public void refBoardDelete(int refnum){
+		sqlSessionTemplate.delete("refBoardDelete", refnum);
+	}
+	
+	
+	// 자료실 파일추가 기능
+	public int refBoardFileInsertPro(RefFileDto refFileDto){
+		return sqlSessionTemplate.insert("refBoardFileInsertPro", refFileDto);
+	}
+	
+	// 자료실 파일 삭제
+	public void refBoardFileDelete(int refnum){
+		sqlSessionTemplate.delete("refBoardFileDelete", refnum);
+	}
+	
+	// 자료실 파일 삭제
+	public int fileUpdateDelete(int filenum){
+		return sqlSessionTemplate.update("fileUpdateDelete", filenum);
+	}
+
+	
+}

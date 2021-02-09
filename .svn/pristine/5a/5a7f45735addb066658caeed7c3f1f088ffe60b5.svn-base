@@ -1,0 +1,139 @@
+package ino.web.freeBoard.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import ino.web.freeBoard.dto.FreeBoardDto;
+import ino.web.freeBoard.dto.RefBoardDto;
+import ino.web.freeBoard.service.FreeBoardService;
+
+@Controller
+public class FreeBoardController {
+	
+	@Autowired
+	private FreeBoardService freeBoardService;
+	
+	// 메인게시글 리스트
+	@RequestMapping(value="/main.ino", method = RequestMethod.GET)
+	public ModelAndView main(HttpServletRequest request){
+		ModelAndView mav = new ModelAndView();
+	
+		// https://dh2y.iptime.org:10443/svn/JDJ
+		
+		List list = freeBoardService.freeBoardList();
+//		List list = freeBoardService.freeBoardList2();
+		
+		mav.setViewName("boardMain");
+		mav.addObject("freeBoardList",list);
+	return mav;
+	}
+	
+	
+	@RequestMapping(value="/freeBoardInsert.ino", method = RequestMethod.GET)
+	public String freeBoardInsert(HttpServletRequest request){
+		return "freeBoardInsert";
+	}
+	
+	// 메인 게시글 글쓰기
+	@RequestMapping(value="/freeBoardInsertPro.ino", method = RequestMethod.POST)
+	public String freeBoardInsertPro(FreeBoardDto dto, HttpServletRequest request){
+		dto.setName(request.getParameter("name"));
+		dto.setTitle(request.getParameter("title"));
+		dto.setContent(request.getParameter("content"));
+		freeBoardService.freeBoardInsertPro(dto);
+		int num = dto.getNum();
+		System.out.println("insert num >>>>>>" + num);
+		return "redirect:freeBoardDetail.ino?num=" + num;
+	}
+	
+	// 메인 게시글 상세페이지
+	@RequestMapping(value="/freeBoardDetail.ino", method = RequestMethod.GET)
+	public ModelAndView freeBoardDetail(HttpServletRequest request, FreeBoardDto dto){
+		int num = Integer.parseInt(request.getParameter("num"));
+		System.out.println("detail num >>>>>>" + num);
+		dto = freeBoardService.getDetailByNum(num);
+		System.out.println("디테일"+dto.toString());
+		/*System.out.println(dto.toString());*/
+		return new ModelAndView("freeBoardDetail", "freeBoardDto", dto);
+	}
+	
+	// 메인 게시글 수정
+	@RequestMapping(value="/freeBoardUpdate.ino", method = RequestMethod.POST)
+	public ModelAndView freeBoardUpdate(HttpServletRequest request,FreeBoardDto dto){
+		int num = Integer.parseInt(request.getParameter("num"));
+		dto = freeBoardService.getDetailByNum(num);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("freeBoardUpdate");
+		mav.addObject("freeBoardDto", dto);
+		System.out.println("수정전 "+dto.toString());
+		return mav;
+	}
+	
+	// 메인 게시글 수정 기능
+	@RequestMapping(value="/freeBoardUpdatePro.ino", method = RequestMethod.POST)
+	public String freeBoardUpdatePro(HttpServletRequest request,FreeBoardDto dto){
+		dto.setName(request.getParameter("name"));
+		dto.setTitle(request.getParameter("title"));
+		dto.setContent(request.getParameter("content"));
+		dto.setNum(Integer.parseInt(request.getParameter("num")));
+		freeBoardService.freeBoardUpdatePro(dto);
+		System.out.println("수정 후"+dto.toString());
+		return "redirect:main.ino";
+	}
+	
+	// 메인 게시글 삭제 기능
+	@RequestMapping(value="/freeBoardDelete.ino", method = RequestMethod.GET)
+	public String freeBoardDelete(@RequestParam("num") int num){
+		freeBoardService.freeBoardDelete(num);
+		return "redirect:main.ino";
+	}
+	
+	// ====================================================
+	
+	// 자료실 리스트
+	@RequestMapping(value="/ref.ino", method = RequestMethod.GET)
+	public ModelAndView ref(HttpServletRequest request){
+		ModelAndView mav = new ModelAndView();
+		List list = freeBoardService.refBoardList();
+		mav.setViewName("refBoardMain");
+		mav.addObject("RefBoardList",list);
+		return mav;
+	}
+	
+	// 자료실 글쓰기 화면
+	@RequestMapping(value="/refBoardInsert.ino", method = RequestMethod.GET)
+	public String refBoardInsert(HttpServletRequest request){
+		return "refBoardInsert";
+	}
+
+	// 자료실 글쓰기 구현
+		@RequestMapping(value="/refBoardInsertPro.ino", method = RequestMethod.POST)
+		public String refBoardInsertPro(RefBoardDto dto, HttpServletRequest request){
+			dto.setRefname(request.getParameter("refname"));
+			dto.setReftitle(request.getParameter("reftitle"));
+			dto.setRefcontent(request.getParameter("refcontent"));
+			freeBoardService.refBoardInsertPro(dto);
+			int num = dto.getRefnum();
+			System.out.println("insert num >>>>>>" + num);
+			return "redirect:refBoardDetail.ino?num=" + num;
+		}
+		
+	// 자료실 상세페이지
+		// 메인 게시글 상세페이지
+		@RequestMapping(value="/refBoardDetail.ino", method = RequestMethod.GET)
+		public ModelAndView refBoardDetail(HttpServletRequest request, RefBoardDto dto){
+			int refnum = Integer.parseInt(request.getParameter("refnum"));
+			System.out.println("detail num >>>>>>" + refnum);
+			dto = freeBoardService.getDetailRefNum(refnum);
+			return new ModelAndView("refBoardDetail", "refBoardDto", dto);
+		}
+}

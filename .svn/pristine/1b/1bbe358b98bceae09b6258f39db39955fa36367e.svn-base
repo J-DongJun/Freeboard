@@ -1,0 +1,64 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<% request.setCharacterEncoding("UTF-8"); %>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+	<div>
+		<h1>자유게시판</h1>
+	</div>
+	<div style="width:650px;" align="right">
+		<a href="./main.ino">리스트로</a>
+	</div>
+	<hr style="width: 600px">
+	
+	<form action="./freeBoardUpdate.ino" method="POST">
+		<input type="hidden" name="num" value="${freeBoardDto.num }"><!-- 이렇게 hidden 을쓰면 폼태그가 num값을 히든으로 안보이게 가지고있다가 서브밋칠때 히든값도 같이 넘겨줄수있음 -->
+		<div style="width: 150px; float: left;">이름 :</div>
+		<div style="width: 500px; float: left;" align="left"><input type="text" name="name" value="${freeBoardDto.name }" readonly/></div>
+		
+		<div style="width: 150px; float: left;">제목 :</div>
+		<div style="width: 500px; float: left;" align="left"><input type="text" name="title"  value="${freeBoardDto.title }" readonly/></div>
+	
+		<div style="width: 150px; float: left;">작성날자</div>
+		<div style="width: 500px; float: left;" align="left"><input type="text" name="title"  value="${freeBoardDto.regdate }" readonly/></div>
+	
+		<div style="width: 150px; float: left;">내용 :</div>
+		<div style="width: 500px; float: left;" align="left"><textarea readonly name="content" rows="25" cols="65">${freeBoardDto.content }</textarea></div>
+		<div align="right">
+		<input type="submit" value="수정" ><!-- submit 은 이렇게만해도 form 태그속에 데이터들 넘겨줍니당 -->
+		<input type="button" value="삭제" onclick="delete_confirm();">
+		<input type="button" value="취소" onclick="button_confirm();">
+		&nbsp;&nbsRp;&nbsp;
+		</div>
+	
+	</form>
+	
+</body>
+
+<!--  취소버튼 확연여부 -->
+<script type="text/javascript">
+	function button_confirm(){
+		if(confirm("취소하시겠습니까?") == true){
+			location.href="./main.ino";
+		}else{
+			return;
+		}
+	}
+	
+	function delete_confirm(){
+		if(confirm("삭제하시겠습니까?") == true){
+			location.href="./main.ino";
+		}else{
+			return;
+		}
+	}
+	
+</script>
+</html>

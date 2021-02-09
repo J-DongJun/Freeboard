@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.freeBoard.mapper.FreeBoardMapper">
+	
+	
+	<select id="freeBoardGetList" resultType="freeBoardDto"> <!-- resultType="ino.web.board.dto.BoardDto" -->
+		SELECT NUM
+			 , TITLE
+			 , NAME
+			 , TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE
+			 , CONTENT 
+		  FROM FREEBOARD
+		 ORDER BY LPAD( NUM, 5 ) DESC
+	</select>
+	
+	<insert id="freeBoardInsertPro" parameterType="freeBoardDto" >
+		<selectKey  keyProperty="num" resultType="int" order="AFTER"><!-- 이 셀렉키값이 <insert id="freeBoardInsertPro" parameterType="freeBoardDto" > 여기 파라미터받는 타입으로 반환됨 ㅇㅋ?아아  -->
+			SELECT FREEBOARDNUM_SEQ.CURRVAL FROM DUAL
+		</selectKey>
+		INSERT INTO FREEBOARD( NUM
+							, TITLE
+							, NAME
+							, REGDATE
+							, CONTENT)
+		VALUES( FREEBOARDNUM_SEQ.NEXTVAL
+			 , #{title}
+			 , #{name}
+			 , SYSDATE
+			 , #{content})
+	</insert>
+	
+	<select id="freeBoardDetailByNum" resultType="freeBoardDto" parameterType="int">
+		SELECT NUM
+			 , TITLE
+			 , NAME
+			 , TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE
+			 , CONTENT 
+		  FROM FREEBOARD
+		WHERE NUM=#{num}
+	</select>
+	
+	<update id="freeBoardUpdatePro" parameterType="freeBoardDto">
+		UPDATE FREEBOARD
+		   SET NAME = #{name}
+			 , TITLE = #{title}
+			 , CONTENT = #{content}
+		 WHERE NUM = #{num}
+	</update>
+	
+	<delete id="freeBoardDelete" parameterType="int">
+		DELETE FROM FREEBOARD WHERE NUM = #{num}
+	</delete>
+	
+	<!-- ======================================= -->
+	
+	<select id="refBoardGetList" resultType="refBoardDto"> 
+		SELECT *
+		  FROM REFBOARD
+	</select>
+	
+	<insert id="refBoardInsertPro" parameterType="refBoardDto" >
+		<selectKey  keyProperty="refnum" resultType="int" order="AFTER">
+			SELECT REFBOARDNUM_SEQ.CURRVAL FROM DUAL
+		</selectKey>
+		INSERT INTO REFBOARD( REFNUM
+							, REFTITLE
+							, REFNAME
+							, REFREGDATE
+							, REFCONTENT)
+		VALUES( REFBOARDNUM_SEQ.NEXTVAL
+			 , #{reftitle}
+			 , #{refname}
+			 , SYSDATE
+			 , #{refcontent})
+	</insert>
+	
+	<select id="refBoardDetailByNum" resultType="refBoardDto" parameterType="int">
+		SELECT REFNUM
+			 , REFTITLE
+			 , REFNAME
+			 , TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE
+			 , REFCONTENT 
+		  FROM REFBOARD
+		WHERE REFNUM=#{refnum}
+	</select>
+</mapper>

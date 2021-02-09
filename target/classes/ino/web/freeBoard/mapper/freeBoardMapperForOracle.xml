@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.freeBoard.mapper.FreeBoardMapper">
+	
+	
+	<select id="freeBoardGetList" resultType="freeBoardDto"> <!-- resultType="ino.web.board.dto.BoardDto" -->
+		SELECT NUM
+			 , TITLE
+			 , NAME
+			 , TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE
+			 , CONTENT
+		  FROM ( SELECT A.*
+		  			  , ROW_NUMBER() OVER(ORDER BY LPAD( NUM, 5 ) DESC) AS RNUM
+		  		   FROM FREEBOARD A
+		  		)
+		   WHERE RNUM BETWEEN #{startIndex} AND #{cntPerPage}
+		<include refid="search" />
+	</select>
+	
+	<sql id="search">
+		<choose>
+			<when test="search_option == 'all' ">
+					AND NAME LIKE '%'||#{keyword}||'%'
+		    		OR TITLE LIKE '%'||#{keyword}||'%'
+			</when>
+			<otherwise>
+					AND ${search_option} LIKE '%'||#{keyword}||'%'
+			</otherwise>
+		</choose>		
+	</sql>
+	
+	
+	<select id="freeBoardGetListCnt" resultType="int"> <!-- resultType="ino.web.board.dto.BoardDto" -->
+		SELECT COUNT(*) FROM FREEBOARD
+		WHERE NAME LIKE '%'||#{keyword}||'%'
+		   OR TITLE LIKE '%'||#{keyword}||'%'
+	</select>
+	
+	<insert id="freeBoardInsertPro" parameterType="freeBoardDto" >
+		<selectKey  keyProperty="num" resultType="int" order="AFTER"><!-- 이 셀렉키값이 <insert id="freeBoardInsertPro" parameterType="freeBoardDto" > 여기 파라미터받는 타입으로 반환됨 ㅇㅋ?아아  -->
+			SELECT FREEBOARDNUM_SEQ.CURRVAL FROM DUAL
+		</selectKey>
+		INSERT INTO FREEBOARD( NUM
+							, TITLE
+							, NAME
+							, REGDATE
+							, CONTENT)
+		VALUES( FREEBOARDNUM_SEQ.NEXTVAL
+			 , #{title}
+			 , #{name}
+			 , SYSDATE
+			 , #{content})
+	</insert>
+	
+	<select id="freeBoardDetailByNum" resultType="freeBoardDto" parameterType="int">
+		SELECT NUM
+			 , TITLE
+			 , NAME
+			 , TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE
+			 , CONTENT 
+		  FROM FREEBOARD
+		WHERE NUM=#{num}
+	</select>
+	
+	<update id="freeBoardUpdatePro" parameterType="freeBoardDto">
+		UPDATE FREEBOARD
+		   SET NAME = #{name}
+			 , TITLE = #{title}
+			 , CONTENT = #{content}
+		 WHERE NUM = #{num}
+	</update>
+	
+	<delete id="freeBoardDelete" parameterType="int">
+		DELETE FROM FREEBOARD WHERE NUM = #{num}
+	</delete>
+	
+	<!-- ======================================= -->
+	
+	<select id="refBoardGetList" resultType="refBoardDto"> 
+		SELECT REFNUM
+			 , REFTITLE
+			 , REFNAME
+			 , TO_CHAR(REFREGDATE,'YYYY/MM/DD') REFREGDATE
+			 , REFCONTENT 
+		  FROM (SELECT A.*
+		  			,ROW_NUMBER() OVER(ORDER BY LPAD(REFNUM, 5)DESC) AS RNUM
+		  			FROM REFBOARD A
+		  		)
+		  WHERE RNUM BETWEEN #{startIndex, jdbcType=INTEGER} AND #{cntPerPage, jdbcType=INTEGER}
+	</select>
+	
+	<select id="refBoardGetListCnt" resultType="int">
+		SELECT COUNT(*) FROM REFBOARD
+	</select>
+	
+	<insert id="refBoardInsertPro" parameterType="refBoardDto" >
+		<selectKey  keyProperty="refnum" resultType="int" order="AFTER">
+			SELECT REFBOARDNUM_SEQ.CURRVAL FROM DUAL
+		</selectKey>
+		INSERT INTO REFBOARD( REFNUM
+							, REFTITLE
+							, REFNAME
+							, REFREGDATE
+							, REFCONTENT)
+		VALUES( REFBOARDNUM_SEQ.NEXTVAL
+			 , #{reftitle}
+			 , #{refname}
+			 , SYSDATE
+			 , #{refcontent})
+	</insert>
+	
+	<select id="refBoardDetailByNum" resultType="refBoardDto" parameterType="int">
+		SELECT REFNUM
+			 , REFTITLE
+			 , REFNAME
+			 , TO_CHAR(REFREGDATE,'YYYY/MM/DD') REFREGDATE
+			 , REFCONTENT 
+		  FROM REFBOARD
+		WHERE REFNUM=#{refnum}
+	</select>
+	
+	<update id="refBoardUpdatePro" parameterType="refBoardDto">
+		UPDATE REFBOARD
+		   SET REFNAME = #{refname}
+			 , REFTITLE = #{reftitle}
+			 , REFCONTENT = #{refcontent}
+		 WHERE REFNUM = #{refnum}
+	</update>
+	
+	<delete id="refBoardDelete" parameterType="int">
+		DELETE FROM REFBOARD WHERE REFNUM = #{refnum}
+	</delete>
+	
+	<!-- 자료실 파일삭제 -->
+	<delete id="refBoardFileDelete" parameterType="int">
+		DELETE FROM REF_FILE WHERE BOARD_NUM = #{refnum}
+	</delete>
+	
+	<insert id="insertFile" parameterType="hashMap">
+		INSERT INTO REF_FILE(
+			FILE_NUM,
+			ORG_FILE_NAME,
+			CHANGE_FILE_NAME,
+			FILE_SIZE		
+		)VALUES(
+			REFFILENUM_SEQ.NEXTVAL,
+			#{filenum},
+			#{org_file_name},
+			#{change_file_name},
+			#{file_size}
+		)
+	</insert>
+	
+	<!-- 파일 추가 -->
+	<insert id="refBoardFileInsertPro" parameterType="refFileDto" >
+		INSERT INTO REF_FILE( FILE_NUM
+							, BOARD_NUM
+							, ORG_FILE_NAME
+							, CHANGE_FILE_NAME
+							, FILE_SIZE
+							, REGDATE
+							, DEL_YN
+							)
+		VALUES( REFFILENUM_SEQ.NEXTVAL
+			 , #{board_no}
+			 , #{org_file_name}
+			 , #{change_file_name}
+			 , #{file_size}
+			 , SYSDATE
+			 , 'N')
+	</insert>
+	
+	<!-- 게시글 번호로 파일 불러옴 -->
+	<select id="refBoardDetailFileByNum" resultType="refFileDto" parameterType="int">
+		SELECT 
+			FILE_NUM AS filenum
+		    , BOARD_NUM AS board_no
+		    , ORG_FILE_NAME
+		    , CHANGE_FILE_NAME
+		    , file_size
+		    , REGDATE
+		    , DEL_YN
+		  FROM REF_FILE
+		 WHERE BOARD_NUM=#{refnum}
+		   AND DEL_YN = 'N'
+	</select>
+	
+	<!-- 파일 삭제 여부 N -->
+	<update id="fileUpdateDelete" parameterType="int">
+		UPDATE REF_FILE
+		   SET DEL_YN = 'Y'
+		 WHERE FILE_NUM = #{filenum}
+	</update>
+</mapper>
